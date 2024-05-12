@@ -5,8 +5,9 @@ from selenium.webdriver.common.by import By
 import time
 
 
-BUY_MINUTE = 1
-GAME_MINUTE = 5
+BUY_MINUTE = 0.5
+GAME_MINUTE = 3
+
 
 def check_money():
     """Checking, how much money do we have - return an int."""
@@ -55,18 +56,21 @@ chrome_options.add_experimental_option("detach", True)
 driver = webdriver.Chrome(options=chrome_options)
 driver.get(url="https://orteil.dashnet.org/experiments/cookie/")
 
-game_timeout = time.time() + 60*GAME_MINUTE  # 5 minutes from now
+# timer starts
+game_timeout = time.time() + 60 * GAME_MINUTE  # 5 minutes from now
+buying_timeout = time.time() + 60 * BUY_MINUTE
+
 cookie = driver.find_element(by=By.ID, value="cookie")
 # Running for 5 minutes
 while True:
-    upgrade_buy_timeout = time.time() + 60*BUY_MINUTE
     if time.time() > game_timeout:
         break
     # Click to cookie
+    if time.time() > buying_timeout:
+        # Check which item to buy
+        buy()
+        buying_timeout = buying_timeout + 60 * BUY_MINUTE
     cookie.click()
-
-# Check what to buy and buy it
-buy()
 
 # Quit the driver
 # driver.quit()
