@@ -1,7 +1,4 @@
 from flask import Flask
-import os
-
-print(os.environ.get("FLASK_APP"))
 
 app = Flask(__name__)
 
