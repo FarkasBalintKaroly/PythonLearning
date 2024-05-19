@@ -76,9 +76,10 @@ def say_bye():
     print("Bye")
 
 
-@delay_decorator
 def say_greeting():
     print("How are you?")
 
 
 say_hello()
+decorated_function = delay_decorator(say_greeting)
+decorated_function()
