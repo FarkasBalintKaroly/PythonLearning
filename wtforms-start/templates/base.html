@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <title>{% block title %}{% endblock %}</title>
     <style>
-    {% block styling %}
-    body{
-        background: purple;
-    }
+    {% block styles %}
+        {{ boostrap.load_css }}
     {% endblock %}
     </style>
 </head>
