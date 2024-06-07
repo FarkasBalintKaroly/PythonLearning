@@ -37,13 +37,11 @@ with app.app_context():
 
 @app.route('/')
 def home():
-
     # Read all the records of the database
     with app.app_context():
         result = db.session.execute(db.select(Book).order_by(Book.title))
         all_books = result.scalars().all()
-        print(all_books)
-
+    # Load the template webpage
     return render_template(template_name_or_list="index.html", all_books=all_books)
 
 
@@ -59,16 +57,34 @@ def add():
             new_book = Book(title=title, author=author, rating=rating)
             db.session.add(new_book)
             db.session.commit()
-        return redirect(url_for('home'))
-        # return render_template(template_name_or_list="index.html", all_books=all_books)
-
+        return redirect(url_for("home"))
     return render_template(template_name_or_list="add.html")
 
 
-@app.route("/edit_rating/<int:id_>", methods=["POST", "GET"])
-def edit_rating(id_):
-    print(id_)
-    return render_template(template_name_or_list="edit-rating.html")
+@app.route("/edit_rating", methods=["POST", "GET"])
+def edit_rating():
+    # If submit form -- post method
+    if request.method == "POST":
+        new_rating = float(request.form.get("rating"))
+        with app.app_context():
+            book_id = request.args.get("id")
+            book_to_update = db.session.execute(db.select(Book).where(Book.id == book_id)).scalar()
+            book_to_update.rating = new_rating
+            db.session.commit()
+        return redirect(url_for("home"))
+    # If load webpage -- get method
+    book_id = request.args.get("id")
+    book_selected = db.session.execute(db.select(Book).where(Book.id == book_id)).scalar()
+    return render_template(template_name_or_list="edit-rating.html", selected_book=book_selected)
+
+
+@app.route("/delete")
+def delete_record():
+    book_id = request.args.get("id")
+    book_to_delete = db.session.execute(db.select(Book).where(Book.id == book_id)).scalar()
+    db.session.delete(book_to_delete)
+    db.session.commit()
+    return redirect(url_for("home"))
 
 
 if __name__ == "__main__":
