@@ -4,10 +4,16 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import Integer, String, Float
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
+from wtforms import StringField, IntegerField, SubmitField
 from wtforms.validators import DataRequired
 import requests
 
+
+# Creating a form for rating editing
+class EditRatingForm(FlaskForm):
+    new_rating = IntegerField("Your Rating Out of 10 e.g. 7.5", validators=[DataRequired()])
+    new_review = StringField("Your Review", validators=[DataRequired()])
+    submit_field = SubmitField("Submit")
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
@@ -39,13 +45,22 @@ class Movie(db.Model):
 with app.app_context():
     db.create_all()
 
-# with app.app_context():
-#     db.session.add(second_movie)
-#     db.session.commit()
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    # Read all the records of the database
+    with app.app_context():
+        result = db.session.execute(db.select(Movie).order_by(Movie.id))
+        all_movies = result.scalars().all()
+    # Load the template webpage with the movies
+    return render_template(template_name_or_list="index.html", all_movies=all_movies)
+
+@app.route("/edit", methods=["POST", "GET"])
+def edit():
+    if request.method == "POST":
+        pass
+    edit_rating_form = EditRatingForm()
+    return render_template(template_name_or_list="edit.html", form=edit_rating_form)
 
 
 if __name__ == '__main__':
