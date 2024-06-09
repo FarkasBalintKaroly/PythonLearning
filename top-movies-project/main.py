@@ -4,16 +4,16 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import Integer, String, Float
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SubmitField
+from wtforms import StringField, FloatField, SubmitField
 from wtforms.validators import DataRequired
 import requests
 
 
 # Creating a form for rating editing
 class EditRatingForm(FlaskForm):
-    new_rating = IntegerField("Your Rating Out of 10 e.g. 7.5", validators=[DataRequired()])
+    new_rating = FloatField("Your Rating Out of 10 e.g. 7.5", validators=[DataRequired()])
     new_review = StringField("Your Review", validators=[DataRequired()])
-    submit_field = SubmitField("Submit")
+    submit_field = SubmitField("Done")
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
@@ -48,6 +48,7 @@ with app.app_context():
 
 @app.route("/")
 def home():
+    """Home page of the project"""
     # Read all the records of the database
     with app.app_context():
         result = db.session.execute(db.select(Movie).order_by(Movie.id))
@@ -57,10 +58,31 @@ def home():
 
 @app.route("/edit", methods=["POST", "GET"])
 def edit():
-    if request.method == "POST":
-        pass
+    """Edit a movie rating and review in the database."""
     edit_rating_form = EditRatingForm()
+    edit_rating_form.validate_on_submit()
+    if edit_rating_form.validate_on_submit():
+        new_rating = edit_rating_form.new_rating.data
+        new_review = edit_rating_form.new_review.data
+        movie_id = request.args.get("id")
+        # Update record in the database
+        with app.app_context():
+            book_to_update = db.session.execute(db.select(Movie).where(Movie.id == movie_id)).scalar()
+            book_to_update.rating = new_rating
+            book_to_update.review = new_review
+            db.session.commit()
+        return redirect(url_for("home"))
     return render_template(template_name_or_list="edit.html", form=edit_rating_form)
+
+
+@app.route("/delete")
+def delete():
+    """Delete a movie from the database."""
+    movie_id = request.args.get("id")
+    movie_to_delete = db.session.execute(db.select(Movie).where(Movie.id == movie_id)).scalar()
+    db.session.delete(movie_to_delete)
+    db.session.commit()
+    return redirect(url_for("home"))
 
 
 if __name__ == '__main__':
