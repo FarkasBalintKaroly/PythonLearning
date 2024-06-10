@@ -7,6 +7,14 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, FloatField, SubmitField
 from wtforms.validators import DataRequired
 import requests
+import os
+
+
+# Required for requests
+TOP_MOVIES_API_KEY = os.environ.get("TOP_MOVIES_API_KEY")
+SEARCH_FOR_MOVIES_API_ENDPOINT = "https://api.themoviedb.org/3/search/movie"
+MOVIE_DETAILS_API_ENDPOINT = "https://api.themoviedb.org/3/movie/"
+MOVIE_IMAGE_URL = "https://image.tmdb.org/t/p/w500"
 
 
 # Creating a form for rating editing
@@ -14,6 +22,10 @@ class EditRatingForm(FlaskForm):
     new_rating = FloatField("Your Rating Out of 10 e.g. 7.5", validators=[DataRequired()])
     new_review = StringField("Your Review", validators=[DataRequired()])
     submit_field = SubmitField("Done")
+
+class AddMovieTitle(FlaskForm):
+    movie_title = StringField("Movie Title", validators=[DataRequired()])
+    submit_field = SubmitField("Add Movie")
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
@@ -31,12 +43,12 @@ db.init_app(app)
 class Movie(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
-    year: Mapped[int] = mapped_column(Integer, nullable=False)
-    description: Mapped[str] = mapped_column(String(500), nullable=False)
-    rating: Mapped[float] = mapped_column(Float, nullable=False)
-    ranking: Mapped[int] = mapped_column(Integer, nullable=False)
-    review: Mapped[str] = mapped_column(String(250), nullable=False)
-    img_url: Mapped[str] = mapped_column(String(250), nullable=False)
+    year: Mapped[int] = mapped_column(Integer)
+    description: Mapped[str] = mapped_column(String(500))
+    rating: Mapped[float] = mapped_column(Float)
+    ranking: Mapped[int] = mapped_column(Integer)
+    review: Mapped[str] = mapped_column(String(250))
+    img_url: Mapped[str] = mapped_column(String(250))
 
     def __repr__(self):
         return f'<Movie {self.title}>'
@@ -83,6 +95,39 @@ def delete():
     db.session.delete(movie_to_delete)
     db.session.commit()
     return redirect(url_for("home"))
+
+@app.route("/add", methods=["POST", "GET"])
+def add():
+    add_new_movie_form = AddMovieTitle()
+    add_new_movie_form.validate_on_submit()
+    if add_new_movie_form.validate_on_submit():
+        new_title = add_new_movie_form.movie_title.data
+        params = {
+            "api_key": TOP_MOVIES_API_KEY,
+            "query": new_title,
+            "language": "en-US"
+        }
+        response = requests.get(url=SEARCH_FOR_MOVIES_API_ENDPOINT, params=params)
+        all_movies = response.json()["results"]
+        return render_template(template_name_or_list="select.html", all_movies=all_movies)
+    return render_template(template_name_or_list="add.html", form=add_new_movie_form)
+
+
+@app.route("/find_movie")
+def find_movie():
+    movie_id = request.args.get("id")
+    if movie_id:
+        movie_api_url = f"{MOVIE_DETAILS_API_ENDPOINT}/{movie_id}"
+        response = requests.get(url=movie_api_url, params={"api_key": TOP_MOVIES_API_KEY})
+        new_movie_details = response.json()
+        title = new_movie_details["title"]
+        img_url = f"{MOVIE_IMAGE_URL}{new_movie_details['poster_path']}"
+        year = new_movie_details["release_date"].split("-")[0]
+        description = new_movie_details["overview"]
+        new_movie = Movie(title=title, img_url=img_url, year=year, description=description)
+        db.session.add(new_movie)
+        db.session.commit()
+        return redirect(url_for("home"))
 
 
 if __name__ == '__main__':
