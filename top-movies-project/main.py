@@ -43,12 +43,12 @@ db.init_app(app)
 class Movie(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
-    year: Mapped[int] = mapped_column(Integer)
-    description: Mapped[str] = mapped_column(String(500))
-    rating: Mapped[float] = mapped_column(Float)
-    ranking: Mapped[int] = mapped_column(Integer)
-    review: Mapped[str] = mapped_column(String(250))
-    img_url: Mapped[str] = mapped_column(String(250))
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
+    description: Mapped[str] = mapped_column(String(500), nullable=False)
+    rating: Mapped[float] = mapped_column(Float, nullable=True)
+    ranking: Mapped[int] = mapped_column(Integer, nullable=True)
+    review: Mapped[str] = mapped_column(String(250), nullable=True)
+    img_url: Mapped[str] = mapped_column(String(250), nullable=False)
 
     def __repr__(self):
         return f'<Movie {self.title}>'
@@ -63,8 +63,12 @@ def home():
     """Home page of the project"""
     # Read all the records of the database
     with app.app_context():
-        result = db.session.execute(db.select(Movie).order_by(Movie.id))
+        result = db.session.execute(db.select(Movie).order_by(Movie.rating))
         all_movies = result.scalars().all()
+        ranking = len(all_movies)
+        for movie in all_movies:
+            movie.ranking = ranking
+            ranking -= 1
     # Load the template webpage with the movies
     return render_template(template_name_or_list="index.html", all_movies=all_movies)
 
@@ -127,7 +131,8 @@ def find_movie():
         new_movie = Movie(title=title, img_url=img_url, year=year, description=description)
         db.session.add(new_movie)
         db.session.commit()
-        return redirect(url_for("home"))
+        db_movie_id = new_movie.id
+        return redirect(url_for("edit", id=db_movie_id))
 
 
 if __name__ == '__main__':
