@@ -1,5 +1,4 @@
 import random
-
 from flask import Flask, jsonify, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -8,9 +7,12 @@ from sqlalchemy import Integer, String, Boolean
 
 app = Flask(__name__)
 
+
 # CREATE DB
 class Base(DeclarativeBase):
     pass
+
+
 # Connect to Database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cafes.db'
 db = SQLAlchemy(model_class=Base)
@@ -42,6 +44,7 @@ def home():
 
 
 # HTTP GET - Read Record
+# Get one random cafe from the database
 @app.route("/random", methods=["GET"])
 def get_random_cafe():
     with app.app_context():
@@ -64,13 +67,61 @@ def get_random_cafe():
             }
         })
 
+
+# Get all the cafe from the database
 @app.route("/all", methods=["GET"])
-def all_cafe():
-    all_cafes = db.session.execute(db.select(Cafe).order_by(Cafe.name)).scalars().all()
+def get_all_cafe():
+    result = db.session.execute(db.select(Cafe).order_by(Cafe.name))
+    all_cafes = result.scalars().all()
     list_of_cafes = []
-    for cafes in all_cafes:
-        list_of_cafes.append(cafes.to_dict())
+    for cafe in all_cafes:
+        new_cafe = {
+            "name": cafe.name,
+            "map_url": cafe.map_url,
+            "img_url": cafe.img_url,
+            "location": cafe.location,
+            "amenities": {
+                "has_sockets": cafe.has_sockets,
+                "has_toilet": cafe.has_toilet,
+                "has_wifi": cafe.has_wifi,
+                "can_take_calls": cafe.can_take_calls,
+                "seats": cafe.seats,
+                "coffee_price": cafe.coffee_price
+            }
+        }
+        list_of_cafes.append(new_cafe)
     return jsonify(cafes=list_of_cafes)
+
+
+# Get all the cafes from the database in a specific location
+@app.route("/search", methods=["GET"])
+def search_cafe():
+    location = request.args.get("loc")
+    result = db.session.execute(db.select(Cafe).where(Cafe.location == location))
+    searched_cafe = result.scalars().all()
+    if len(searched_cafe) == 0:
+        return jsonify(error={
+            "Not Found": "Sorry, we don't have a cafe at that location."
+        })
+    list_of_searched_cafes = []
+    for cafe in searched_cafe:
+        new_cafe = {
+            "name": cafe.name,
+            "map_url": cafe.map_url,
+            "img_url": cafe.img_url,
+            "location": cafe.location,
+            "amenities": {
+                "has_sockets": cafe.has_sockets,
+                "has_toilet": cafe.has_toilet,
+                "has_wifi": cafe.has_wifi,
+                "can_take_calls": cafe.can_take_calls,
+                "seats": cafe.seats,
+                "coffee_price": cafe.coffee_price
+            }
+        }
+        list_of_searched_cafes.append(new_cafe)
+    return jsonify(cafes=list_of_searched_cafes)
+
 
 # HTTP POST - Create Record
 
