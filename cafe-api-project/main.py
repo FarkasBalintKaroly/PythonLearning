@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import Integer, String, Boolean
 
+API_KEY = "TopSecretAPIKey"
 
 app = Flask(__name__)
 
@@ -145,9 +146,33 @@ def post_new_cafe():
 
 
 # HTTP PUT/PATCH - Update Record
+# Update a cafe price
+@app.route("/update-price/<int:cafe_id>", methods=["PATCH"])
+def update_price(cafe_id):
+    new_price = request.args.get("new_price")
+    cafe_to_update = db.get_or_404(Cafe, cafe_id)
+    if cafe_to_update:
+        cafe_to_update.coffee_price = new_price
+        db.session.commit()
+        return jsonify(response={"success": "Successfully updated the price."}), 200
+    else:
+        return jsonify(error={"Not found": "Sorry a cafe with that id was not found in the database."}), 404
 
 # HTTP DELETE - Delete Record
-
+# Delete a cafe from the database
+@app.route("/report-closed/<int:cafe_id>", methods=["DELETE"])
+def delete_cafe(cafe_id):
+    api_key = request.args.get("api_key")
+    if api_key == API_KEY:
+        cafe_to_delete = db.get_or_404(Cafe, cafe_id)
+        if cafe_to_delete:
+            db.session.delete(cafe_to_delete)
+            db.session.commit()
+            return jsonify(response={"success": "Successfully deleted the cafe."}), 200
+        else:
+            return jsonify(error={"Not found": "Sorry a cafe with that id was not found in the database."}), 404
+    else:
+        return jsonify(error={"Forbidden": "Sorry, that's not allowed. Make sure you have the correct api_key."}), 403
 
 if __name__ == '__main__':
     app.run(debug=True)
