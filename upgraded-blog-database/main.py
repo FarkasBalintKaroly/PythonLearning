@@ -14,12 +14,26 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
 Bootstrap5(app)
 
+
 # CREATE DATABASE
 class Base(DeclarativeBase):
     pass
+
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
 db = SQLAlchemy(model_class=Base)
+ckeditor = CKEditor(app)
 db.init_app(app)
+
+
+# Add new post form
+class AddNewPostForm(FlaskForm):
+    post_title = StringField("Blog Post Title", validators=[DataRequired()])
+    subtitle = StringField("Subtitle", validators=[DataRequired()])
+    author = StringField("Your Name", validators=[DataRequired()])
+    blog_img_url = StringField("Blog Image URL", validators=[DataRequired(), URL()])
+    blog_content = CKEditorField("Blog Content", validators=[DataRequired()])
+    submit_button = SubmitField("SUBMIT NEW POST")
 
 
 # CONFIGURE TABLE
@@ -43,6 +57,7 @@ def get_all_posts():
     posts = result.scalars().all()
     return render_template("index.html", all_posts=posts)
 
+
 @app.route('/show_post')
 def show_post():
     post_id = request.args.get("post_id")
@@ -51,11 +66,34 @@ def show_post():
     return render_template("post.html", post=requested_post)
 
 
-# TODO: add_new_post() to create a new blog post
+@app.route('/new-post', methods=["GET", "POST"])
+def add_new_post():
+    new_post_form = AddNewPostForm()
+    if request.method == "POST" and new_post_form.validate:
+        title = new_post_form.post_title.data
+        subtitle = new_post_form.subtitle.data
+        author = new_post_form.author.data
+        blog_img_url = new_post_form.blog_img_url.data
+        blog_content = new_post_form.blog_content.data
+        post_date = date.today().strftime("%B %d, %Y")
+
+        new_post = BlogPost(
+            title=title,
+            subtitle=subtitle,
+            date=post_date,
+            body=blog_content,
+            author=author,
+            img_url=blog_img_url,
+        )
+        db.session.add(new_post)
+        db.session.commit()
+        return redirect(url_for("get_all_posts"))
+    return render_template("make-post.html", form=new_post_form)
 
 # TODO: edit_post() to change an existing blog post
 
 # TODO: delete_post() to remove a blog post from the database
+
 
 # Below is the code from previous lessons. No changes needed.
 @app.route("/about")
