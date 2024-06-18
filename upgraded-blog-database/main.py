@@ -90,7 +90,11 @@ def add_new_post():
         return redirect(url_for("get_all_posts"))
     return render_template("make-post.html", form=new_post_form)
 
-# TODO: edit_post() to change an existing blog post
+
+# Edit a post
+@app.route('/edit-post/<int:post_id>', methods=["POST", "GET"])
+def edit_post(post_id):
+    return post_id
 
 # TODO: delete_post() to remove a blog post from the database
 
