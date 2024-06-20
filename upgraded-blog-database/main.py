@@ -88,13 +88,38 @@ def add_new_post():
         db.session.add(new_post)
         db.session.commit()
         return redirect(url_for("get_all_posts"))
-    return render_template("make-post.html", form=new_post_form)
+    return render_template("make-post.html", form=new_post_form, is_edit=False)
 
 
 # Edit a post
 @app.route('/edit-post/<int:post_id>', methods=["POST", "GET"])
 def edit_post(post_id):
-    return post_id
+    requested_post = db.session.execute(db.select(BlogPost).where(BlogPost.id == post_id))
+    requested_post = requested_post.scalar()
+    edit_form = AddNewPostForm(
+        post_title=requested_post.title,
+        subtitle=requested_post.subtitle,
+        blog_img_url=requested_post.img_url,
+        author=requested_post.author,
+        blog_content=requested_post.body,
+    )
+    if request.method == "POST" and edit_form.validate:
+        with app.app_context():
+            post_title = request.form.get("post_title")
+            subtitle = request.form.get("subtitle")
+            blog_img_url = request.form.get("blog_img_url")
+            author = request.form.get("author")
+            blog_content = request.form.get("blog_content")
+
+            requested_post.title = post_title
+            requested_post.subtitle = subtitle
+            requested_post.body = blog_content
+            requested_post.img_url = blog_img_url
+            requested_post.author = author
+
+            db.session.commit()
+        return redirect("get_all_posts")
+    return render_template(template_name_or_list="make-post.html", form=edit_form, is_edit=True)
 
 # TODO: delete_post() to remove a blog post from the database
 
