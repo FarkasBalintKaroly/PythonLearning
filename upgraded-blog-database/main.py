@@ -103,25 +103,31 @@ def edit_post(post_id):
         author=requested_post.author,
         blog_content=requested_post.body,
     )
-    if request.method == "POST" and edit_form.validate:
-        with app.app_context():
-            post_title = request.form.get("post_title")
-            subtitle = request.form.get("subtitle")
-            blog_img_url = request.form.get("blog_img_url")
-            author = request.form.get("author")
-            blog_content = request.form.get("blog_content")
+    if edit_form.validate and request.method == "POST":
+        post_title = request.form.get("post_title")
+        subtitle = request.form.get("subtitle")
+        blog_img_url = request.form.get("blog_img_url")
+        author = request.form.get("author")
+        blog_content = request.form.get("blog_content")
 
-            requested_post.title = post_title
-            requested_post.subtitle = subtitle
-            requested_post.body = blog_content
-            requested_post.img_url = blog_img_url
-            requested_post.author = author
+        requested_post.title = post_title
+        requested_post.subtitle = subtitle
+        requested_post.body = blog_content
+        requested_post.img_url = blog_img_url
+        requested_post.author = author
 
-            db.session.commit()
-        return redirect("get_all_posts")
+        db.session.commit()
+        return redirect(url_for("show_post", post_id=requested_post.id))
     return render_template(template_name_or_list="make-post.html", form=edit_form, is_edit=True)
 
-# TODO: delete_post() to remove a blog post from the database
+
+# Delete a post
+@app.route("/delete/<int:post_id>")
+def delete_post(post_id):
+    post_to_delete = db.get_or_404(BlogPost, post_id)
+    db.session.delete(post_to_delete)
+    db.session.commit()
+    return redirect(url_for("get_all_posts"))
 
 
 # Below is the code from previous lessons. No changes needed.
