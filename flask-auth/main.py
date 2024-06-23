@@ -43,7 +43,7 @@ with app.app_context():
 
 @app.route('/')
 def home():
-    return render_template("index.html")
+    return render_template("index.html", logged_in=current_user.is_authenticated)
 
 
 @app.route('/register', methods=["POST", "GET"])
@@ -70,11 +70,11 @@ def register():
 
             login_user(new_user)
 
-            return redirect(url_for('secrets'))
+            return redirect(url_for('secrets', logged_in=current_user.is_authenticated))
         if user:
             error = "You've already signed up with that e-mail. Try to log in instead."
 
-    return render_template("register.html", error=error)
+    return render_template("register.html", error=error, logged_in=current_user.is_authenticated)
 
 
 @app.route('/login', methods=["POST", "GET"])
@@ -93,13 +93,13 @@ def login():
         elif not user:
             error = "That e-mail does not exists. Please try again."
 
-    return render_template("login.html", error=error)
+    return render_template("login.html", error=error, logged_in=current_user.is_authenticated)
 
 
 @app.route('/secrets')
 @login_required
 def secrets():
-    return render_template("secrets.html", name=current_user.name)
+    return render_template("secrets.html", name=current_user.name, logged_in=current_user.is_authenticated)
 
 
 @app.route('/logout')
