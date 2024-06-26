@@ -1,14 +1,16 @@
+import flask
 from datetime import date
 from flask import Flask, abort, render_template, redirect, url_for, flash
 from flask_bootstrap import Bootstrap5
 from flask_ckeditor import CKEditor
-# from flask_gravatar import Gravatar
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user, login_required
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import Integer, String, Text
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
+# from flask_gravatar import Gravatar
+from hashlib import md5
 # Import your forms from the forms.py
 from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 
@@ -20,6 +22,19 @@ Bootstrap5(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+# gravatar = Gravatar(app,
+#                     size=100,
+#                     rating='g',
+#                     default='retro',
+#                     force_default=False,
+#                     force_lower=False,
+#                     use_ssl=False,
+#                     base_url=None)
+
+def avatar(email):
+    digest = md5(email.lower().encode('utf-8')).hexdigest()
+    return f'https://www.gravatar.com/avatar/{digest}?d=identicon&s={100}'
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -159,7 +174,8 @@ def show_post(post_id):
     return render_template("post.html",
                            post=requested_post,
                            logged_in=current_user.is_authenticated,
-                           comment_form=comment_form)
+                           comment_form=comment_form,
+                           avatar=avatar)
 
 
 @app.route("/new-post", methods=["GET", "POST"])

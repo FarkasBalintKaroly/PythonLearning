@@ -41,18 +41,19 @@
         {{ ckeditor.config(name='comment') }}
         {{ render_form(comment_form, novalidate=True) }}
         <div class="comment">
-          <!-- TODO: Show all the comments on a post -->
+          {% for comment in post.comments %}
           <ul class="commentList">
             <li>
               <div class="commenterImage">
-                <img src="../static/assets/img/default-profile.jpg" />
+                <img src="{{ avatar(comment.comment_author.email) }}" />
               </div>
               <div class="commentText">
-                <p>Some comment</p>
-                <span class="date sub-text">comment author name</span>
+                <p>{{ comment.text|safe }}</p>
+                <span class="date sub-text">{{ comment.comment_author.username }}</span>
               </div>
             </li>
           </ul>
+          {% endfor %}
         </div>
       </div>
     </div>
