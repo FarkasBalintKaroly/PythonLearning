@@ -2,6 +2,7 @@ body {
     background-color: white;
 }
 
-svg {
-    font-color: black;
+.icon {
+    width: 2em;
+    height: 2em;
 }
