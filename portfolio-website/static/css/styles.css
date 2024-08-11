@@ -1,3 +1,7 @@
-#navbar: {
-    background-color: red;
+body {
+    background-color: white;
+}
+
+svg {
+    font-color: black;
 }
